@@ -41,6 +41,6 @@ func example5() {
 }
 
 func example6() string {
-    t := time.Date(2017, time.September, 26, 12, 13, 14, 0, time.UTC)
-    return t.String()
+	t := time.Date(2017, time.September, 26, 12, 13, 14, 0, time.UTC)
+	return t.String()
 }
