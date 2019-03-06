@@ -8,6 +8,12 @@ import (
 
 const ArgumentCheck = "argument"
 
+// Known excludes for the argument check.
+var argumentExcludes = map[string]string{
+	// package: function
+	"time": "Date", // https://golang.org/pkg/time/#Date
+}
+
 type ArgumentAnalyzer struct {
 	pass *analysis.Pass
 }
@@ -30,6 +36,11 @@ func (a *ArgumentAnalyzer) Check(n ast.Node) {
 		return
 	}
 
+	// Don't check if package and function combination is excluded
+	if s, ok := expr.Fun.(*ast.SelectorExpr); ok && a.isExcluded(s) {
+		return
+	}
+
 	for _, arg := range expr.Args {
 		switch x := arg.(type) {
 		case *ast.BasicLit:
@@ -40,6 +51,21 @@ func (a *ArgumentAnalyzer) Check(n ast.Node) {
 			a.checkBinaryExpr(x)
 		}
 	}
+}
+
+func (a *ArgumentAnalyzer) isExcluded(expr *ast.SelectorExpr) bool {
+	var p string
+
+	switch x := expr.X.(type) {
+	case *ast.Ident:
+		p = x.Name
+	}
+
+	if v, ok := argumentExcludes[p]; ok && v == expr.Sel.Name {
+		return true
+	}
+
+	return false
 }
 
 func (a *ArgumentAnalyzer) checkBinaryExpr(expr *ast.BinaryExpr) {

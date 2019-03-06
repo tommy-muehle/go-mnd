@@ -39,3 +39,8 @@ func example4() {
 func example5() {
 	http.StatusText(200) // want "Magic number: 200"
 }
+
+func example6() string {
+    t := time.Date(2017, time.September, 26, 12, 13, 14, 0, time.UTC)
+    return t.String()
+}
