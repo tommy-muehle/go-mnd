@@ -18,6 +18,14 @@ This analyzer requires Golang in version >= 1.12 because it's depends on the **g
 go get github.com/tommy-muehle/go-mnd/cmd/mnd
 ```
 
+To install with [Homebrew](https://brew.sh/), run:
+
+```
+brew tap tommy-muehle/tap && brew install tommy-muehle/tap/mnd
+```
+
+On Windows download the [latest release](https://github.com/tommy-muehle/go-mnd/releases).
+
 ## Usage
 
 [![asciicast](https://asciinema.org/a/231021.svg)](https://asciinema.org/a/231021)
