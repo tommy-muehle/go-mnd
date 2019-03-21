@@ -44,3 +44,13 @@ func example6() string {
 	t := time.Date(2017, time.September, 26, 12, 13, 14, 0, time.UTC)
 	return t.String()
 }
+
+func example7() {
+	c := make(chan int, 1)
+	c <- 1
+}
+
+func example8() {
+	c := make(chan int, 2) // want "Magic number: 2"
+	c <- 1
+}

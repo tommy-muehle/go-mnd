@@ -41,11 +41,24 @@ func (a *ArgumentAnalyzer) Check(n ast.Node) {
 		return
 	}
 
-	for _, arg := range expr.Args {
+	for i, arg := range expr.Args {
 		switch x := arg.(type) {
 		case *ast.BasicLit:
-			if isMagicNumber(x) {
+			if !isMagicNumber(x) {
+				continue
+			}
+			// If it's a magic number and has no previous element, report it
+			if i == 0 {
 				a.pass.Reportf(x.Pos(), reportMsg, x.Value, ArgumentCheck)
+			} else {
+				// Otherwise check the previous element type
+				switch expr.Args[i-1].(type) {
+				case *ast.ChanType:
+					// When it's not a simple buffered channel, report it
+					if x.Value != "1" {
+						a.pass.Reportf(x.Pos(), reportMsg, x.Value, ArgumentCheck)
+					}
+				}
 			}
 		case *ast.BinaryExpr:
 			a.checkBinaryExpr(x)
