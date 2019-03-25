@@ -15,3 +15,14 @@ archive:
     format_overrides:
         - goos: windows
           format: zip
+
+brew:
+    name: mnd
+    github:
+        owner: tommy-muehle
+        name: homebrew-tap
+    folder: Formula
+    homepage:  https://github.com/tommy-muehle/go-mnd
+    description: Magic number detector for Go
+    test: |
+        system "#{bin}/mnd --version"
