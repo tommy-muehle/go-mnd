@@ -36,6 +36,24 @@ func (a *CaseAnalyzer) Check(n ast.Node) {
 			if isMagicNumber(x) {
 				a.pass.Reportf(x.Pos(), reportMsg, x.Value, CaseCheck)
 			}
+		case *ast.BinaryExpr:
+			a.checkBinaryExpr(x)
+		}
+	}
+}
+
+func (a *CaseAnalyzer) checkBinaryExpr(expr *ast.BinaryExpr) {
+	switch x := expr.X.(type) {
+	case *ast.BasicLit:
+		if isMagicNumber(x) {
+			a.pass.Reportf(x.Pos(), reportMsg, x.Value, CaseCheck)
+		}
+	}
+
+	switch y := expr.Y.(type) {
+	case *ast.BasicLit:
+		if isMagicNumber(y) {
+			a.pass.Reportf(y.Pos(), reportMsg, y.Value, CaseCheck)
 		}
 	}
 }
