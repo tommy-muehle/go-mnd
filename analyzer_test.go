@@ -1,6 +1,7 @@
 package magic_numbers
 
 import (
+	"flag"
 	"testing"
 
 	"golang.org/x/tools/go/analysis/analysistest"
@@ -34,4 +35,17 @@ func TestOperationChecks(t *testing.T) {
 func TestReturnChecks(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, Analyzer, "return")
+}
+
+func TestCanExcludeNumbers(t *testing.T) {
+	testdata := analysistest.TestData()
+
+	options := flag.NewFlagSet("", flag.ExitOnError)
+	options.String("checks", "assign", "")
+	options.String("ignored-numbers", "100", "")
+
+	analyzer := Analyzer
+	analyzer.Flags = *options
+
+	analysistest.Run(t, testdata, analyzer, "ignored")
 }

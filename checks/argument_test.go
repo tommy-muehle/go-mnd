@@ -40,7 +40,7 @@ var excludeTests = []struct {
 
 func Test_isExcluded(t *testing.T) {
 	assert := assert.New(t)
-	a := NewArgumentAnalyzer(nil)
+	a := NewArgumentAnalyzer(nil, nil)
 
 	for _, tt := range excludeTests {
 		t.Run(tt.name, func(t *testing.T) {
