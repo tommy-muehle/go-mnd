@@ -42,6 +42,7 @@ func TestCanExcludeNumbers(t *testing.T) {
 
 	options := flag.NewFlagSet("", flag.ExitOnError)
 	options.String("checks", "assign", "")
+	options.String("excludes", "", "")
 	options.String("ignored-numbers", "100", "")
 
 	analyzer := Analyzer
