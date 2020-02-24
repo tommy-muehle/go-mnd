@@ -4,7 +4,9 @@ import (
 	"context"
 	"math"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -53,4 +55,19 @@ func example7() {
 func example8() {
 	c := make(chan int, 2) // want "Magic number: 2"
 	c <- 1
+}
+
+func example9() {
+	os.Exit(1)
+}
+
+func example10() {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		duration := 500 * time.Millisecond // want "Magic number: 500"
+		time.Sleep(duration)
+		wg.Done()
+	}()
 }
