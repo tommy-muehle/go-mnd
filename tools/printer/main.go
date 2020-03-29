@@ -9,10 +9,16 @@ import (
 var (
 	src = `
 	package main
-	
+
 	func main() {
-		var y int
-		_ = 5 * y * 6
+		var wg sync.WaitGroup
+
+	for i := 1; i <= 5; i++ {
+		wg.Add(1)
+		go func() {}()
+	}
+
+	wg.Wait()
 	}
 	`
 )
