@@ -26,22 +26,33 @@ func NewAssignAnalyzer(pass *analysis.Pass, config *config.Config) *AssignAnalyz
 func (a *AssignAnalyzer) NodeFilter() []ast.Node {
 	return []ast.Node{
 		(*ast.KeyValueExpr)(nil),
+		(*ast.AssignStmt)(nil),
 	}
 }
 
 func (a *AssignAnalyzer) Check(n ast.Node) {
-	expr, ok := n.(*ast.KeyValueExpr)
-	if !ok {
-		return
-	}
-
-	switch x := expr.Value.(type) {
-	case *ast.BasicLit:
-		if a.isMagicNumber(x) {
-			a.pass.Reportf(x.Pos(), reportMsg, x.Value, AssignCheck)
+	switch expr := n.(type) {
+	case *ast.KeyValueExpr:
+		switch x := expr.Value.(type) {
+		case *ast.BasicLit:
+			if a.isMagicNumber(x) {
+				a.pass.Reportf(x.Pos(), reportMsg, x.Value, AssignCheck)
+			}
+		case *ast.BinaryExpr:
+			a.checkBinaryExpr(x)
 		}
-	case *ast.BinaryExpr:
-		a.checkBinaryExpr(x)
+	case *ast.AssignStmt:
+		for _, e := range expr.Rhs {
+			switch y := e.(type) {
+			case *ast.UnaryExpr:
+				switch x := y.X.(type) {
+				case *ast.BasicLit:
+					if a.isMagicNumber(x) {
+						a.pass.Reportf(x.Pos(), reportMsg, x.Value, AssignCheck)
+					}
+				}
+			}
+		}
 	}
 }
 

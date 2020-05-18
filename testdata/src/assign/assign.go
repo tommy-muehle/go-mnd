@@ -1,6 +1,7 @@
 package assign
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -27,4 +28,9 @@ func example3() *http.Client {
 	}
 
 	return c
+}
+
+func example4() {
+	res := -12 // want "Magic number: 12"
+	fmt.Println(res)
 }
