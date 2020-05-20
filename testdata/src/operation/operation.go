@@ -14,3 +14,8 @@ func example3() {
 	var y int
 	_ = 5 * y * 6 // want "Magic number: 5" "Magic number: 6"
 }
+
+func example4() {
+	const c = 24
+	_ = c + (42 * 10) // want "Magic number: 42" "Magic number: 10"
+}
