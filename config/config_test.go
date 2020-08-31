@@ -1,16 +1,19 @@
-package config
+package config_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/tommy-muehle/go-mnd/config"
 )
 
 func TestWithCustomChecks(t *testing.T) {
 	assert := assert.New(t)
 
-	c := WithOptions(
-		WithCustomChecks("return,operation"),
+	c := config.WithOptions(
+		config.WithCustomChecks("return,operation"),
 	)
 
 	assert.True(c.IsCheckEnabled("return"))
@@ -25,14 +28,14 @@ func TestWithCustomChecks(t *testing.T) {
 func TestZeroIsIgnoredNumber(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.True(DefaultConfig().IsIgnoredNumber("0"))
+	assert.True(config.DefaultConfig().IsIgnoredNumber("0"))
 }
 
 func TestCanIgnoreCustomNumbers(t *testing.T) {
 	assert := assert.New(t)
 
-	c := WithOptions(
-		WithIgnoredNumbers("1,1000"),
+	c := config.WithOptions(
+		config.WithIgnoredNumbers("1,1000"),
 	)
 
 	assert.True(c.IsIgnoredNumber("0"))
@@ -41,4 +44,14 @@ func TestCanIgnoreCustomNumbers(t *testing.T) {
 
 	assert.False(c.IsIgnoredNumber("2"))
 	assert.False(c.IsIgnoredNumber("999"))
+}
+
+func TestWithExcludes(t *testing.T) {
+	assert := assert.New(t)
+
+	c := config.WithOptions(
+		config.WithExcludes(".*"),
+	)
+
+	assert.Contains(c.Excludes, regexp.MustCompile(".*"))
 }

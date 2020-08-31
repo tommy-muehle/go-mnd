@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/tommy-muehle/go-mnd"
 	"golang.org/x/tools/go/analysis/singlechecker"
+
+	mnd "github.com/tommy-muehle/go-mnd"
 )
 
-func main() { singlechecker.Main(magic_numbers.Analyzer) }
+func main() { singlechecker.Main(mnd.Analyzer) }

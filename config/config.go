@@ -28,9 +28,11 @@ func DefaultConfig() *Config {
 
 func WithOptions(options ...Option) *Config {
 	c := DefaultConfig()
+
 	for _, option := range options {
 		option(c)
 	}
+
 	return c
 }
 

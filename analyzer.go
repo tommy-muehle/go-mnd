@@ -57,18 +57,23 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	if conf.IsCheckEnabled(checks.ArgumentCheck) {
 		checker = append(checker, checks.NewArgumentAnalyzer(pass, conf))
 	}
+
 	if conf.IsCheckEnabled(checks.CaseCheck) {
 		checker = append(checker, checks.NewCaseAnalyzer(pass, conf))
 	}
+
 	if conf.IsCheckEnabled(checks.ConditionCheck) {
 		checker = append(checker, checks.NewConditionAnalyzer(pass, conf))
 	}
+
 	if conf.IsCheckEnabled(checks.OperationCheck) {
 		checker = append(checker, checks.NewOperationAnalyzer(pass, conf))
 	}
+
 	if conf.IsCheckEnabled(checks.ReturnCheck) {
 		checker = append(checker, checks.NewReturnAnalyzer(pass, conf))
 	}
+
 	if conf.IsCheckEnabled(checks.AssignCheck) {
 		checker = append(checker, checks.NewAssignAnalyzer(pass, conf))
 	}
@@ -76,6 +81,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	i := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
 	for _, c := range checker {
+		c := c
 		i.Preorder(c.NodeFilter(), func(node ast.Node) {
 			for _, exclude := range conf.Excludes {
 				if exclude.MatchString(pass.Fset.Position(node.Pos()).Filename) {

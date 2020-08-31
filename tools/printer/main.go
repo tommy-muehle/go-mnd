@@ -25,6 +25,7 @@ var (
 
 func main() {
 	fset := token.NewFileSet()
+
 	f, err := parser.ParseFile(fset, "", src, 0)
 	if err != nil {
 		panic(err)
