@@ -34,3 +34,15 @@ func example4() {
 	res := -12 // want "Magic number: 12"
 	fmt.Println(res)
 }
+
+func example5() {
+	var x int32
+	res := x + -12 // want "Magic number: 12"
+	fmt.Println(res)
+}
+
+func example6() {
+	var x int32
+	res := 12 + x // want "Magic number: 12"
+	fmt.Println(res)
+}

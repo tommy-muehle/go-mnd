@@ -21,7 +21,7 @@ func example2() {
 	switch {
 	case t.Hour() < 12: // want "Magic number: 12"
 		fmt.Println("Good morning!")
-	case t.Hour() < 17: // want "Magic number: 17"
+	case 17 > t.Hour(): // want "Magic number: 17"
 		fmt.Println("Good afternoon.")
 	default:
 		fmt.Println("Good evening.")

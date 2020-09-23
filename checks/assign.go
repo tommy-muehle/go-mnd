@@ -45,13 +45,22 @@ func (a *AssignAnalyzer) Check(n ast.Node) {
 		for _, e := range expr.Rhs {
 			switch y := e.(type) {
 			case *ast.UnaryExpr:
-				switch x := y.X.(type) {
-				case *ast.BasicLit:
-					if a.isMagicNumber(x) {
-						a.pass.Reportf(x.Pos(), reportMsg, x.Value, AssignCheck)
-					}
+				a.checkUnaryExpr(y)
+			case *ast.BinaryExpr:
+				switch x := y.Y.(type) {
+				case *ast.UnaryExpr:
+					a.checkUnaryExpr(x)
 				}
 			}
+		}
+	}
+}
+
+func (a *AssignAnalyzer) checkUnaryExpr(expr *ast.UnaryExpr) {
+	switch x := expr.X.(type) {
+	case *ast.BasicLit:
+		if a.isMagicNumber(x) {
+			a.pass.Reportf(x.Pos(), reportMsg, x.Value, AssignCheck)
 		}
 	}
 }
