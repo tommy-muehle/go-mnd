@@ -11,3 +11,19 @@ func example2() string {
 func example3() float64 {
 	return 2.0 // want "Magic number: 2.0"
 }
+
+func example4(x int32) int32 {
+	return x + 42 // want "Magic number: 42"
+}
+
+func example5(x int32) int32 {
+	return 42 + x // want "Magic number: 42"
+}
+
+func example6(x int32) int32 {
+	return x + (42 * 10) // want "Magic number: 42" "Magic number: 10"
+}
+
+func example7(x int32) int32 {
+	return (42 * x) + 10 // want "Magic number: 42" "Magic number: 10"
+}
