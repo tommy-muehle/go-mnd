@@ -7,8 +7,9 @@ A vet analyzer to detect magic numbers.
 
 ## Project status
 
-[![Build Status](https://travis-ci.org/tommy-muehle/go-mnd.svg?branch=master)](https://travis-ci.org/tommy-muehle/go-mnd)
+![CI](https://github.com/tommy-muehle/go-mnd/workflows/CI/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tommy-muehle/go-mnd)](https://goreportcard.com/report/github.com/tommy-muehle/go-mnd)
+[![codecov](https://codecov.io/gh/tommy-muehle/go-mnd/branch/master/graph/badge.svg)](https://codecov.io/gh/tommy-muehle/go-mnd)
 
 ## Install
 
