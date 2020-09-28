@@ -55,7 +55,7 @@ func WithIgnoredNumbers(numbers string) Option {
 		}
 
 		for _, number := range strings.Split(numbers, ",") {
-			config.IgnoredNumbers[number] = struct{}{}
+			config.IgnoredNumbers[config.removeDigitSeparator(number)] = struct{}{}
 		}
 	}
 }
@@ -81,6 +81,10 @@ func (c *Config) IsCheckEnabled(name string) bool {
 }
 
 func (c *Config) IsIgnoredNumber(number string) bool {
-	_, ok := c.IgnoredNumbers[number]
+	_, ok := c.IgnoredNumbers[c.removeDigitSeparator(number)]
 	return ok
+}
+
+func (c *Config) removeDigitSeparator(number string) string {
+	return strings.Replace(number, "_", "", -1)
 }
