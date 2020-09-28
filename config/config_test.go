@@ -46,12 +46,12 @@ func TestCanIgnoreCustomNumbers(t *testing.T) {
 	assert.False(c.IsIgnoredNumber("999"))
 }
 
-func TestWithExcludes(t *testing.T) {
+func TestWithIgnoredFiles(t *testing.T) {
 	assert := assert.New(t)
 
 	c := config.WithOptions(
-		config.WithExcludes(".*"),
+		config.WithIgnoredFiles(".*"),
 	)
 
-	assert.Contains(c.Excludes, regexp.MustCompile(".*"))
+	assert.Contains(c.IgnoredFiles, regexp.MustCompile(".*"))
 }

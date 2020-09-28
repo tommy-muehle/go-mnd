@@ -43,9 +43,14 @@ mnd ./...
 
 The ```-checks``` option let's you define a comma separated list of checks.
 
-The ```-ignored-numbers``` option let's you define a comma separated list of numbers to ignore.
+The ```-ignored-numbers``` option let's you define a comma separated list of numbers to ignore.  
+For example: `-ignored-numbers=1000,10_000`
 
-The ```-excludes``` option let's you define a comma separated list of regexp patterns to exclude.
+The ```-ignored-functions``` option let's you define a comma separated list of function name regexp patterns to exclude.  
+For example: `-ignored-functions=math.*,http.StatusText`
+
+The ```-ignored-files``` option let's you define a comma separated list of filename regexp patterns to exclude.  
+For example: `-ignored-files=magic_*.go,*_numbers.go`
 
 ## Checks
 

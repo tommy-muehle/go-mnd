@@ -37,16 +37,50 @@ func TestReturnChecks(t *testing.T) {
 	analysistest.Run(t, testdata, Analyzer, "return")
 }
 
-func TestCanExcludeNumbers(t *testing.T) {
+func TestCanIgnoreFunctions(t *testing.T) {
+	testdata := analysistest.TestData()
+
+	options := flag.NewFlagSet("", flag.ExitOnError)
+	options.String("checks", "argument", "")
+	options.String("excludes", "", "")
+	options.String("ignored-files", "", "")
+	options.String("ignored-functions", "math.*", "")
+	options.String("ignored-numbers", "", "")
+
+	analyzer := Analyzer
+	analyzer.Flags = *options
+
+	analysistest.Run(t, testdata, analyzer, "ignored/functions")
+}
+
+func TestCanIgnoreNumbers(t *testing.T) {
 	testdata := analysistest.TestData()
 
 	options := flag.NewFlagSet("", flag.ExitOnError)
 	options.String("checks", "assign", "")
 	options.String("excludes", "", "")
+	options.String("ignored-files", "", "")
+	options.String("ignored-functions", "", "")
 	options.String("ignored-numbers", "100", "")
 
 	analyzer := Analyzer
 	analyzer.Flags = *options
 
-	analysistest.Run(t, testdata, analyzer, "ignored")
+	analysistest.Run(t, testdata, analyzer, "ignored/numbers")
+}
+
+func TestCanIgnoreFiles(t *testing.T) {
+	testdata := analysistest.TestData()
+
+	options := flag.NewFlagSet("", flag.ExitOnError)
+	options.String("checks", "argument", "")
+	options.String("excludes", "ignored1", "")
+	options.String("ignored-files", "ignored2", "")
+	options.String("ignored-functions", "", "")
+	options.String("ignored-numbers", "", "")
+
+	analyzer := Analyzer
+	analyzer.Flags = *options
+
+	analysistest.Run(t, testdata, analyzer, "ignored/files")
 }

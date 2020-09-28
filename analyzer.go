@@ -3,6 +3,7 @@ package magic_numbers
 import (
 	"flag"
 	"go/ast"
+	"strings"
 
 	"github.com/tommy-muehle/go-mnd/checks"
 	"github.com/tommy-muehle/go-mnd/config"
@@ -30,8 +31,10 @@ type Checker interface {
 
 func options() flag.FlagSet {
 	options := flag.NewFlagSet("", flag.ExitOnError)
-	options.String("excludes", "", "comma separated list of patterns to exclude from analysis")
-	options.String("ignored-numbers", "", "comma separated list of numbers excluded from analysis")
+	options.String("excludes", "", "deprecated: use ignored-files instead")
+	options.String("ignored-files", "", "comma separated list of file patterns to exclude from analysis")
+	options.String("ignored-functions", "", "comma separated list of function patterns to exclude from analysis")
+	options.String("ignored-numbers", "", "comma separated list of numbers to exclude from analysis")
 	options.String(
 		"checks",
 		checks.ArgumentCheck+","+
@@ -47,9 +50,24 @@ func options() flag.FlagSet {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	var ignoredFiles string
+
+	ignoredFiles = strings.Join(
+		[]string{
+			pass.Analyzer.Flags.Lookup("excludes").Value.String(), // is deprecated
+			pass.Analyzer.Flags.Lookup("ignored-files").Value.String(),
+		},
+		",",
+	)
+
+	if ignoredFiles == "," {
+		ignoredFiles = ""
+	}
+
 	conf := config.WithOptions(
 		config.WithCustomChecks(pass.Analyzer.Flags.Lookup("checks").Value.String()),
-		config.WithExcludes(pass.Analyzer.Flags.Lookup("excludes").Value.String()),
+		config.WithIgnoredFiles(ignoredFiles),
+		config.WithIgnoredFunctions(pass.Analyzer.Flags.Lookup("ignored-functions").Value.String()),
 		config.WithIgnoredNumbers(pass.Analyzer.Flags.Lookup("ignored-numbers").Value.String()),
 	)
 
@@ -83,7 +101,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	for _, c := range checker {
 		c := c
 		i.Preorder(c.NodeFilter(), func(node ast.Node) {
-			for _, exclude := range conf.Excludes {
+			for _, exclude := range conf.IgnoredFiles {
 				if exclude.MatchString(pass.Fset.Position(node.Pos()).Filename) {
 					return
 				}
