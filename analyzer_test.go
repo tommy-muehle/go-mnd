@@ -57,11 +57,11 @@ func TestCanIgnoreNumbers(t *testing.T) {
 	testdata := analysistest.TestData()
 
 	options := flag.NewFlagSet("", flag.ExitOnError)
-	options.String("checks", "assign", "")
+	options.String("checks", "assign,argument", "")
 	options.String("excludes", "", "")
 	options.String("ignored-files", "", "")
 	options.String("ignored-functions", "", "")
-	options.String("ignored-numbers", "100", "")
+	options.String("ignored-numbers", "1000,1234_567_890,3.14159264", "")
 
 	analyzer := Analyzer
 	analyzer.Flags = *options
