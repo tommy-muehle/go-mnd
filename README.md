@@ -1,6 +1,6 @@
 # go-mnd - Magic number detector for Golang
 
-<img align="right" width="250px" src="https://github.com/tommy-muehle/go-mnd/blob/master/logo.png">
+<img align="right" width="250px" src="https://github.com/tommy-muehle/go-mnd/blob/master/images/logo.png">
 
 A vet analyzer to detect magic numbers.
 
@@ -15,11 +15,42 @@ A vet analyzer to detect magic numbers.
 
 ## Install
 
+### Local
+
 This analyzer requires Golang in version >= 1.12 because it's depends on the **go/analysis** API.
 
 ```
 go get -u github.com/tommy-muehle/go-mnd/cmd/mnd
 ```
+
+### Github action
+
+You can run go-mnd as a GitHub action as follows:
+
+```
+name: Example workflow
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Run go-mnd
+        uses: tommy-muehle/go-mnd@master
+        with:
+          args: ./...
+```
+
+### Homebrew
 
 To install with [Homebrew](https://brew.sh/), run:
 
@@ -27,11 +58,15 @@ To install with [Homebrew](https://brew.sh/), run:
 brew tap tommy-muehle/tap && brew install tommy-muehle/tap/mnd
 ```
 
+### Docker
+
 To get the latest available Docker image:
 
 ```
 docker pull tommymuehle/go-mnd
 ```
+
+### Windows
 
 On Windows download the [latest release](https://github.com/tommy-muehle/go-mnd/releases).
 
@@ -159,6 +194,16 @@ You can also build locally the docker image by using the command:
 ```
 make image
 ```
+
+## Stickers
+
+<p style="float: left;">
+    <img alt="Stickers image" width="200px" src="https://github.com/tommy-muehle/go-mnd/blob/master/images/stickers.jpg" />
+    <img alt="Sticker image" width="200px" src="https://github.com/tommy-muehle/go-mnd/blob/master/images/sticker.jpg" />
+</p>
+
+Just drop me a message via Twitter DM or email if you want some go-mnd stickers
+for you or your Gopher usergroup.
 
 ## License
 
