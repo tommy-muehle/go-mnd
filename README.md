@@ -18,13 +18,19 @@ A vet analyzer to detect magic numbers.
 This analyzer requires Golang in version >= 1.12 because it's depends on the **go/analysis** API.
 
 ```
-go get github.com/tommy-muehle/go-mnd/cmd/mnd
+go get -u github.com/tommy-muehle/go-mnd/cmd/mnd
 ```
 
 To install with [Homebrew](https://brew.sh/), run:
 
 ```
 brew tap tommy-muehle/tap && brew install tommy-muehle/tap/mnd
+```
+
+To get the latest available Docker image:
+
+```
+docker pull tommymuehle/go-mnd
 ```
 
 On Windows download the [latest release](https://github.com/tommy-muehle/go-mnd/releases).
@@ -42,6 +48,14 @@ or directly
 ```
 mnd ./...
 ```
+
+or via Docker
+
+```
+docker run --rm -v "$PWD":/app -w /app tommymuehle/go-mnd:latest ./...
+```
+
+## Options
 
 The ```-checks``` option let's you define a comma separated list of checks.
 
@@ -113,6 +127,38 @@ t := time.Date(2017, time.September, 26, 12, 13, 14, 0, time.UTC)
 ```
 
 Additional custom excludes can be defined via option flag.
+
+## Development
+
+### Build
+
+You can build the binary with:
+
+```
+make
+```
+
+### Tests
+
+You can run all unit tests using:
+
+```
+make test
+```
+
+And with coverage report:
+
+```
+make test-coverage
+```
+
+### Docker image
+
+You can also build locally the docker image by using the command:
+
+```
+make image
+```
 
 ## License
 
