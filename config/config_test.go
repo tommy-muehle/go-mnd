@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tommy-muehle/go-mnd/config"
+	"github.com/tommy-muehle/go-mnd/v2/config"
 )
 
 func TestWithCustomChecks(t *testing.T) {

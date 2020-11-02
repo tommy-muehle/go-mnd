@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
-	config "github.com/tommy-muehle/go-mnd/config"
+	config "github.com/tommy-muehle/go-mnd/v2/config"
 )
 
 const ConditionCheck = "condition"

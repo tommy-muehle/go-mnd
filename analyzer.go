@@ -5,8 +5,8 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/tommy-muehle/go-mnd/checks"
-	"github.com/tommy-muehle/go-mnd/config"
+	"github.com/tommy-muehle/go-mnd/v2/checks"
+	"github.com/tommy-muehle/go-mnd/v2/config"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"

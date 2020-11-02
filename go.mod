@@ -1,4 +1,4 @@
-module github.com/tommy-muehle/go-mnd
+module github.com/tommy-muehle/go-mnd/v2
 
 go 1.12
 
