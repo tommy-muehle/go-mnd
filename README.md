@@ -50,6 +50,26 @@ jobs:
           args: ./...
 ```
 
+### GitLab CI
+
+You can run go-mnd inside a GitLab CI pipeline as follows:
+
+```
+stages:
+  - lint
+
+go:lint:mnd:
+  stage: lint
+  needs: []
+  image: golang:latest
+  before_script:
+    - go get -u github.com/tommy-muehle/go-mnd/cmd/mnd
+    - go mod tidy
+    - go mod vendor
+  script:
+    - go vet -vettool $(which mnd) ./...
+```
+
 ### Homebrew
 
 To install with [Homebrew](https://brew.sh/), run:
