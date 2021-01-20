@@ -3,16 +3,18 @@ package checks
 import (
 	"go/ast"
 	"go/token"
+	"sync"
 
 	"golang.org/x/tools/go/analysis"
 
-	config "github.com/tommy-muehle/go-mnd/config"
+	"github.com/tommy-muehle/go-mnd/config"
 )
 
 const ArgumentCheck = "argument"
 
 // constantDefinitions is used to save lines (by number) which contain a constant definition.
 var constantDefinitions = map[int]bool{}
+var mu sync.RWMutex
 
 type ArgumentAnalyzer struct {
 	config *config.Config
@@ -39,13 +41,19 @@ func (a *ArgumentAnalyzer) Check(n ast.Node) {
 		a.checkCallExpr(expr)
 	case *ast.GenDecl:
 		if expr.Tok.String() == "const" {
+			mu.Lock()
 			constantDefinitions[a.pass.Fset.Position(expr.TokPos).Line] = true
+			mu.Unlock()
 		}
 	}
 }
 
 func (a *ArgumentAnalyzer) checkCallExpr(expr *ast.CallExpr) {
-	if ok := constantDefinitions[a.pass.Fset.Position(expr.Pos()).Line]; ok {
+	mu.RLock()
+	ok := constantDefinitions[a.pass.Fset.Position(expr.Pos()).Line]
+	mu.RUnlock()
+
+	if ok {
 		return
 	}
 
