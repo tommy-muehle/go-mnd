@@ -8,7 +8,7 @@ import (
 
 func main() {
 	c := &http.Client{
-		Timeout: 1 * time.Second,
+		Timeout: 2 * time.Second,
 	}
 
 	res, err := c.Get("http://www.google.com/robots.txt")
