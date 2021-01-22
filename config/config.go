@@ -18,8 +18,10 @@ func DefaultConfig() *Config {
 	return &Config{
 		Checks: map[string]bool{},
 		IgnoredNumbers: map[string]struct{}{
-			"0": {},
-			"1": {},
+			"0":   {},
+			"0.0": {},
+			"1":   {},
+			"1.0": {},
 		},
 		IgnoredFiles: []*regexp.Regexp{
 			regexp.MustCompile(`_test.go`),

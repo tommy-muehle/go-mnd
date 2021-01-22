@@ -33,3 +33,9 @@ func example6() {
 		// ...
 	}
 }
+
+func example7() {
+	var x float32
+	if 10 < (x * 1.0) { // want "Magic number: 10"
+	}
+}

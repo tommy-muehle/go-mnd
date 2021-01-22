@@ -15,3 +15,13 @@ func example() {
 	if "test" == y {
 	}
 }
+
+func example2() {
+	var x float32
+
+	if x > 1.0 {
+	}
+
+	if x < 0.0 {
+	}
+}

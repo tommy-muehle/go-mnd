@@ -27,3 +27,13 @@ func example2() {
 		fmt.Println("Good evening.")
 	}
 }
+
+func example3() {
+	var x interface{}
+
+	switch x {
+	case 1.0:
+	case 0.0:
+	case 3.0: // want "Magic number: 3.0"
+	}
+}
