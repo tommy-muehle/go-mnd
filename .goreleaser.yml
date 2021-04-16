@@ -17,7 +17,7 @@ archives:
 
 brews:
   - name: mnd
-    github:
+    tap:
       owner: tommy-muehle
       name: homebrew-tap
     folder: Formula
