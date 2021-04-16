@@ -41,8 +41,12 @@ func (a *ArgumentAnalyzer) Check(n ast.Node) {
 	case *ast.CallExpr:
 		a.checkCallExpr(expr)
 	case *ast.GenDecl:
-		if expr.Tok == token.CONST {
-			pos := a.pass.Fset.Position(expr.TokPos)
+		if expr.Tok != token.CONST {
+			return
+		}
+
+		for _, x := range expr.Specs {
+			pos := a.pass.Fset.Position(x.Pos())
 
 			mu.Lock()
 			constantDefinitions[pos.Filename+":"+strconv.Itoa(pos.Line)] = true
