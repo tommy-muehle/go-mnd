@@ -14,6 +14,11 @@ var MyValue = float32(20) // want "Magic number: 20"
 
 const MyConstantValue = float32(20)
 
+const (
+	FooBlockTypeConversion = int64(512)
+	BarBlockTypeConversion = uint8(2)
+)
+
 func example() {
 	math.Abs(9.5) // want "Magic number: 9.5"
 }
