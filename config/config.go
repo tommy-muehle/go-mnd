@@ -61,6 +61,9 @@ func WithIgnoredFiles(excludes string) Option {
 		}
 
 		for _, exclude := range strings.Split(excludes, ",") {
+		    if exclude == "" {
+		        continue
+            }
 			config.IgnoredFiles = append(config.IgnoredFiles, regexp.MustCompile(exclude))
 		}
 	}
