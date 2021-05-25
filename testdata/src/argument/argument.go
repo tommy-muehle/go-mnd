@@ -80,3 +80,15 @@ func example10() {
 		wg.Done()
 	}()
 }
+
+func foobar(a, b int) {}
+
+func example11() {
+	foobar(0, 3) // want "Magic number: 3"
+}
+
+func foobaz(numbers ...int) {}
+
+func example12() {
+	foobaz(0, 1, 3, 5, 6) // want "Magic number: 3" "Magic number: 5" "Magic number: 6"
+}
