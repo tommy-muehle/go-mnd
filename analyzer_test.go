@@ -84,3 +84,19 @@ func TestCanIgnoreFiles(t *testing.T) {
 
 	analysistest.Run(t, testdata, analyzer, "ignored/files")
 }
+
+func TestCanIgnoreFilesWithBlankExcludesOption(t *testing.T) {
+	testdata := analysistest.TestData()
+
+	options := flag.NewFlagSet("", flag.ExitOnError)
+	options.String("checks", "argument", "")
+	options.String("excludes", "", "")
+	options.String("ignored-files", "ignored1,ignored2", "")
+	options.String("ignored-functions", "", "")
+	options.String("ignored-numbers", "", "")
+
+	analyzer := Analyzer
+	analyzer.Flags = *options
+
+	analysistest.Run(t, testdata, analyzer, "ignored/files")
+}
