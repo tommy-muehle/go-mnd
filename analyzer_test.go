@@ -44,7 +44,7 @@ func TestCanIgnoreFunctions(t *testing.T) {
 	options.String("checks", "argument", "")
 	options.String("excludes", "", "")
 	options.String("ignored-files", "", "")
-	options.String("ignored-functions", "math.*", "")
+	options.String("ignored-functions", "math.*,make", "")
 	options.String("ignored-numbers", "", "")
 
 	analyzer := Analyzer
