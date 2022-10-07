@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -91,4 +92,16 @@ func foobaz(numbers ...int) {}
 
 func example12() {
 	foobaz(0, 1, 3, 5, 6) // want "Magic number: 3" "Magic number: 5" "Magic number: 6"
+}
+
+func example13() {
+	strconv.FormatInt(10, 32)
+	strconv.FormatUint(5, 32)
+	strconv.FormatFloat(5.0, 'E', -1, 32)
+}
+
+func example14() {
+	_, _ = strconv.ParseInt("10", 10, 64)
+	_, _ = strconv.ParseUint("5", 10, 64)
+	_, _ = strconv.ParseFloat("5.0", 32)
 }
