@@ -29,6 +29,7 @@ func DefaultConfig() *Config {
 		IgnoredFunctions: []*regexp.Regexp{
 			regexp.MustCompile(`^time\.Date$`),
 			regexp.MustCompile(`^strconv\.(Format|Parse)(Int|Uint|Float|Complex)$`),
+			regexp.MustCompile(`^strings\.Split(After)?N$`),
 		},
 	}
 }

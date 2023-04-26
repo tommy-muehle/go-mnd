@@ -107,3 +107,8 @@ func example14() {
 	_, _ = strconv.ParseFloat("5.0", 32)
 	_, _ = strconv.ParseComplex("10+3i", 32)
 }
+
+func stringsSplit() {
+	_ = strings.SplitN("a,b,c", ",", 2)
+	_ = strings.SplitAfterN("a,b,c", ",", 2)
+}
