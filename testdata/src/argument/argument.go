@@ -98,10 +98,12 @@ func example13() {
 	strconv.FormatInt(10, 32)
 	strconv.FormatUint(5, 32)
 	strconv.FormatFloat(5.0, 'E', -1, 32)
+	strconv.FormatComplex(10+3i, 'f', 0, 32)
 }
 
 func example14() {
 	_, _ = strconv.ParseInt("10", 10, 64)
 	_, _ = strconv.ParseUint("5", 10, 64)
 	_, _ = strconv.ParseFloat("5.0", 32)
+	_, _ = strconv.ParseComplex("10+3i", 32)
 }

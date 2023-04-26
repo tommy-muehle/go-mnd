@@ -31,9 +31,11 @@ func DefaultConfig() *Config {
 			regexp.MustCompile(`strconv.FormatInt`),
 			regexp.MustCompile(`strconv.FormatUint`),
 			regexp.MustCompile(`strconv.FormatFloat`),
+			regexp.MustCompile(`strconv.FormatComplex`),
 			regexp.MustCompile(`strconv.ParseInt`),
 			regexp.MustCompile(`strconv.ParseUint`),
 			regexp.MustCompile(`strconv.ParseFloat`),
+			regexp.MustCompile(`strconv.ParseComplex`),
 		},
 	}
 }
