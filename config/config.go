@@ -27,15 +27,8 @@ func DefaultConfig() *Config {
 			regexp.MustCompile(`_test.go`),
 		},
 		IgnoredFunctions: []*regexp.Regexp{
-			regexp.MustCompile(`time.Date`),
-			regexp.MustCompile(`strconv.FormatInt`),
-			regexp.MustCompile(`strconv.FormatUint`),
-			regexp.MustCompile(`strconv.FormatFloat`),
-			regexp.MustCompile(`strconv.FormatComplex`),
-			regexp.MustCompile(`strconv.ParseInt`),
-			regexp.MustCompile(`strconv.ParseUint`),
-			regexp.MustCompile(`strconv.ParseFloat`),
-			regexp.MustCompile(`strconv.ParseComplex`),
+			regexp.MustCompile(`^time\.Date$`),
+			regexp.MustCompile(`^strconv\.(Format|Parse)(Int|Uint|Float|Complex)$`),
 		},
 	}
 }
