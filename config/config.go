@@ -27,6 +27,7 @@ func DefaultConfig() *Config {
 			regexp.MustCompile(`_test.go`),
 		},
 		IgnoredFunctions: []*regexp.Regexp{
+			regexp.MustCompile(`^os\.(Chmod|Mkdir(All)?|OpenFile|WriteFile)$`),
 			regexp.MustCompile(`^time\.Date$`),
 			regexp.MustCompile(`^strconv\.(Format|Parse)(Int|Uint|Float|Complex)$`),
 			regexp.MustCompile(`^strings\.Split(After)?N$`),

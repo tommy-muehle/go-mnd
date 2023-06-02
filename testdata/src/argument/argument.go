@@ -112,3 +112,23 @@ func stringsSplit() {
 	_ = strings.SplitN("a,b,c", ",", 2)
 	_ = strings.SplitAfterN("a,b,c", ",", 2)
 }
+
+func osChmod() {
+	_ = os.Chmod("some-filename", 0644)
+}
+
+func osMkdir() {
+	_ = os.Mkdir("testdir", 0750)
+}
+
+func osMkdirAll() {
+	_ = os.MkdirAll("test/subdir", 0750)
+}
+
+func osOpenFile() {
+	_, _ = os.OpenFile("notes.txt", os.O_RDWR|os.O_CREATE, 0755)
+}
+
+func osWriteFile() {
+	_ = os.WriteFile("testdata/hello", []byte("Hello, Gophers!"), 0666)
+}
