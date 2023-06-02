@@ -98,10 +98,37 @@ func example13() {
 	strconv.FormatInt(10, 32)
 	strconv.FormatUint(5, 32)
 	strconv.FormatFloat(5.0, 'E', -1, 32)
+	strconv.FormatComplex(10+3i, 'f', 0, 32)
 }
 
 func example14() {
 	_, _ = strconv.ParseInt("10", 10, 64)
 	_, _ = strconv.ParseUint("5", 10, 64)
 	_, _ = strconv.ParseFloat("5.0", 32)
+	_, _ = strconv.ParseComplex("10+3i", 32)
+}
+
+func stringsSplit() {
+	_ = strings.SplitN("a,b,c", ",", 2)
+	_ = strings.SplitAfterN("a,b,c", ",", 2)
+}
+
+func osChmod() {
+	_ = os.Chmod("some-filename", 0644)
+}
+
+func osMkdir() {
+	_ = os.Mkdir("testdir", 0750)
+}
+
+func osMkdirAll() {
+	_ = os.MkdirAll("test/subdir", 0750)
+}
+
+func osOpenFile() {
+	_, _ = os.OpenFile("notes.txt", os.O_RDWR|os.O_CREATE, 0755)
+}
+
+func osWriteFile() {
+	_ = os.WriteFile("testdata/hello", []byte("Hello, Gophers!"), 0666)
 }
