@@ -11,10 +11,13 @@ package checker
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"flag"
 	"fmt"
+	"go/format"
 	"go/token"
 	"go/types"
+	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -29,6 +32,8 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/internal/analysisflags"
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/tools/internal/diff"
+	"golang.org/x/tools/internal/robustio"
 )
 
 var (
@@ -44,6 +49,12 @@ var (
 
 	// Log files for optional performance tracing.
 	CPUProfile, MemProfile, Trace string
+
+	// IncludeTests indicates whether test files should be analyzed too.
+	IncludeTests = true
+
+	// Fix determines whether to apply all suggested fixes.
+	Fix bool
 )
 
 // RegisterFlags registers command-line flags used by the analysis driver.
@@ -56,11 +67,15 @@ func RegisterFlags() {
 	flag.StringVar(&CPUProfile, "cpuprofile", "", "write CPU profile to this file")
 	flag.StringVar(&MemProfile, "memprofile", "", "write memory profile to this file")
 	flag.StringVar(&Trace, "trace", "", "write trace log to this file")
+	flag.BoolVar(&IncludeTests, "test", IncludeTests, "indicates whether test files should be analyzed, too")
+
+	flag.BoolVar(&Fix, "fix", false, "apply all suggested fixes")
 }
 
 // Run loads the packages specified by args using go/packages,
 // then applies the specified analyzers to them.
 // Analysis flags must already have been set.
+// Analyzers must be valid according to [analysis.Validate].
 // It provides most of the logic for the main functions of both the
 // singlechecker and the multi-analysis commands.
 // It returns the appropriate exit code.
@@ -119,17 +134,39 @@ func Run(args []string, analyzers []*analysis.Analyzer) (exitcode int) {
 	allSyntax := needFacts(analyzers)
 	initial, err := load(args, allSyntax)
 	if err != nil {
-		log.Print(err)
-		return 1 // load errors
+		if _, ok := err.(typeParseError); !ok {
+			// Fail when some of the errors are not
+			// related to parsing nor typing.
+			log.Print(err)
+			return 1
+		}
+		// TODO: filter analyzers based on RunDespiteError?
+	}
+
+	// Run the analysis.
+	roots := analyze(initial, analyzers)
+
+	// Apply fixes.
+	if Fix {
+		if err := applyFixes(roots); err != nil {
+			// Fail when applying fixes failed.
+			log.Print(err)
+			return 1
+		}
 	}
 
 	// Print the results.
-	roots := analyze(initial, analyzers)
-
 	return printDiagnostics(roots)
 }
 
-// load loads the initial packages.
+// typeParseError represents a package load error
+// that is related to typing and parsing.
+type typeParseError struct {
+	error
+}
+
+// load loads the initial packages. If all loading issues are related to
+// typing and parsing, the returned error is of type typeParseError.
 func load(patterns []string, allSyntax bool) ([]*packages.Package, error) {
 	mode := packages.LoadSyntax
 	if allSyntax {
@@ -137,24 +174,50 @@ func load(patterns []string, allSyntax bool) ([]*packages.Package, error) {
 	}
 	conf := packages.Config{
 		Mode:  mode,
-		Tests: true,
+		Tests: IncludeTests,
 	}
 	initial, err := packages.Load(&conf, patterns...)
 	if err == nil {
-		if n := packages.PrintErrors(initial); n > 1 {
-			err = fmt.Errorf("%d errors during loading", n)
-		} else if n == 1 {
-			err = fmt.Errorf("error during loading")
-		} else if len(initial) == 0 {
+		if len(initial) == 0 {
 			err = fmt.Errorf("%s matched no packages", strings.Join(patterns, " "))
+		} else {
+			err = loadingError(initial)
 		}
 	}
-
 	return initial, err
 }
 
-// TestAnalyzer applies an analysis to a set of packages (and their
+// loadingError checks for issues during the loading of initial
+// packages. Returns nil if there are no issues. Returns error
+// of type typeParseError if all errors, including those in
+// dependencies, are related to typing or parsing. Otherwise,
+// a plain error is returned with an appropriate message.
+func loadingError(initial []*packages.Package) error {
+	var err error
+	if n := packages.PrintErrors(initial); n > 1 {
+		err = fmt.Errorf("%d errors during loading", n)
+	} else if n == 1 {
+		err = errors.New("error during loading")
+	} else {
+		// no errors
+		return nil
+	}
+	all := true
+	packages.Visit(initial, nil, func(pkg *packages.Package) {
+		for _, err := range pkg.Errors {
+			typeOrParse := err.Kind == packages.TypeError || err.Kind == packages.ParseError
+			all = all && typeOrParse
+		}
+	})
+	if all {
+		return typeParseError{err}
+	}
+	return err
+}
+
+// TestAnalyzer applies an analyzer to a set of packages (and their
 // dependencies if necessary) and returns the results.
+// The analyzer must be valid according to [analysis.Validate].
 //
 // Facts about pkg are returned in a map keyed by object; package facts
 // have a nil key.
@@ -250,6 +313,191 @@ func analyze(pkgs []*packages.Package, analyzers []*analysis.Analyzer) []*action
 	return roots
 }
 
+func applyFixes(roots []*action) error {
+	// visit all of the actions and accumulate the suggested edits.
+	paths := make(map[robustio.FileID]string)
+	editsByAction := make(map[robustio.FileID]map[*action][]diff.Edit)
+	visited := make(map[*action]bool)
+	var apply func(*action) error
+	var visitAll func(actions []*action) error
+	visitAll = func(actions []*action) error {
+		for _, act := range actions {
+			if !visited[act] {
+				visited[act] = true
+				if err := visitAll(act.deps); err != nil {
+					return err
+				}
+				if err := apply(act); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	apply = func(act *action) error {
+		editsForTokenFile := make(map[*token.File][]diff.Edit)
+		for _, diag := range act.diagnostics {
+			for _, sf := range diag.SuggestedFixes {
+				for _, edit := range sf.TextEdits {
+					// Validate the edit.
+					// Any error here indicates a bug in the analyzer.
+					file := act.pkg.Fset.File(edit.Pos)
+					if file == nil {
+						return fmt.Errorf("analysis %q suggests invalid fix: missing file info for pos (%v)",
+							act.a.Name, edit.Pos)
+					}
+					if edit.Pos > edit.End {
+						return fmt.Errorf("analysis %q suggests invalid fix: pos (%v) > end (%v)",
+							act.a.Name, edit.Pos, edit.End)
+					}
+					if eof := token.Pos(file.Base() + file.Size()); edit.End > eof {
+						return fmt.Errorf("analysis %q suggests invalid fix: end (%v) past end of file (%v)",
+							act.a.Name, edit.End, eof)
+					}
+					edit := diff.Edit{Start: file.Offset(edit.Pos), End: file.Offset(edit.End), New: string(edit.NewText)}
+					editsForTokenFile[file] = append(editsForTokenFile[file], edit)
+				}
+			}
+		}
+
+		for f, edits := range editsForTokenFile {
+			id, _, err := robustio.GetFileID(f.Name())
+			if err != nil {
+				return err
+			}
+			if _, hasId := paths[id]; !hasId {
+				paths[id] = f.Name()
+				editsByAction[id] = make(map[*action][]diff.Edit)
+			}
+			editsByAction[id][act] = edits
+		}
+		return nil
+	}
+
+	if err := visitAll(roots); err != nil {
+		return err
+	}
+
+	// Validate and group the edits to each actual file.
+	editsByPath := make(map[string][]diff.Edit)
+	for id, actToEdits := range editsByAction {
+		path := paths[id]
+		actions := make([]*action, 0, len(actToEdits))
+		for act := range actToEdits {
+			actions = append(actions, act)
+		}
+
+		// Does any action create conflicting edits?
+		for _, act := range actions {
+			edits := actToEdits[act]
+			if _, invalid := validateEdits(edits); invalid > 0 {
+				name, x, y := act.a.Name, edits[invalid-1], edits[invalid]
+				return diff3Conflict(path, name, name, []diff.Edit{x}, []diff.Edit{y})
+			}
+		}
+
+		// Does any pair of different actions create edits that conflict?
+		for j := range actions {
+			for k := range actions[:j] {
+				x, y := actions[j], actions[k]
+				if x.a.Name > y.a.Name {
+					x, y = y, x
+				}
+				xedits, yedits := actToEdits[x], actToEdits[y]
+				combined := append(xedits, yedits...)
+				if _, invalid := validateEdits(combined); invalid > 0 {
+					// TODO: consider applying each action's consistent list of edits entirely,
+					// and then using a three-way merge (such as GNU diff3) on the resulting
+					// files to report more precisely the parts that actually conflict.
+					return diff3Conflict(path, x.a.Name, y.a.Name, xedits, yedits)
+				}
+			}
+		}
+
+		var edits []diff.Edit
+		for act := range actToEdits {
+			edits = append(edits, actToEdits[act]...)
+		}
+		editsByPath[path], _ = validateEdits(edits) // remove duplicates. already validated.
+	}
+
+	// Now we've got a set of valid edits for each file. Apply them.
+	for path, edits := range editsByPath {
+		contents, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		out, err := diff.ApplyBytes(contents, edits)
+		if err != nil {
+			return err
+		}
+
+		// Try to format the file.
+		if formatted, err := format.Source(out); err == nil {
+			out = formatted
+		}
+
+		if err := ioutil.WriteFile(path, out, 0644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateEdits returns a list of edits that is sorted and
+// contains no duplicate edits. Returns the index of some
+// overlapping adjacent edits if there is one and <0 if the
+// edits are valid.
+func validateEdits(edits []diff.Edit) ([]diff.Edit, int) {
+	if len(edits) == 0 {
+		return nil, -1
+	}
+	equivalent := func(x, y diff.Edit) bool {
+		return x.Start == y.Start && x.End == y.End && x.New == y.New
+	}
+	diff.SortEdits(edits)
+	unique := []diff.Edit{edits[0]}
+	invalid := -1
+	for i := 1; i < len(edits); i++ {
+		prev, cur := edits[i-1], edits[i]
+		// We skip over equivalent edits without considering them
+		// an error. This handles identical edits coming from the
+		// multiple ways of loading a package into a
+		// *go/packages.Packages for testing, e.g. packages "p" and "p [p.test]".
+		if !equivalent(prev, cur) {
+			unique = append(unique, cur)
+			if prev.End > cur.Start {
+				invalid = i
+			}
+		}
+	}
+	return unique, invalid
+}
+
+// diff3Conflict returns an error describing two conflicting sets of
+// edits on a file at path.
+func diff3Conflict(path string, xlabel, ylabel string, xedits, yedits []diff.Edit) error {
+	contents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	oldlabel, old := "base", string(contents)
+
+	xdiff, err := diff.ToUnified(oldlabel, xlabel, old, xedits)
+	if err != nil {
+		return err
+	}
+	ydiff, err := diff.ToUnified(oldlabel, ylabel, old, yedits)
+	if err != nil {
+		return err
+	}
+
+	return fmt.Errorf("conflicting edits from %s and %s on %s\nfirst edits:\n%s\nsecond edits:\n%s",
+		xlabel, ylabel, path, xdiff, ydiff)
+}
+
 // printDiagnostics prints the diagnostics for the root packages in either
 // plain text or JSON format. JSON format also includes errors for any
 // dependencies.
@@ -295,7 +543,8 @@ func printDiagnostics(roots []*action) (exitcode int) {
 		// avoid double-reporting in source files that belong to
 		// multiple packages, such as foo and foo.test.
 		type key struct {
-			token.Position
+			pos token.Position
+			end token.Position
 			*analysis.Analyzer
 			message string
 		}
@@ -313,7 +562,8 @@ func printDiagnostics(roots []*action) (exitcode int) {
 					// as most users don't care.
 
 					posn := act.pkg.Fset.Position(diag.Pos)
-					k := key{posn, act.a, diag.Message}
+					end := act.pkg.Fset.Position(diag.End)
+					k := key{posn, end, act.a, diag.Message}
 					if seen[k] {
 						continue // duplicate
 					}
@@ -326,7 +576,7 @@ func printDiagnostics(roots []*action) (exitcode int) {
 		visitAll(roots)
 
 		if exitcode == 0 && len(seen) > 0 {
-			exitcode = 3 // successfuly produced diagnostics
+			exitcode = 3 // successfully produced diagnostics
 		}
 	}
 
@@ -392,7 +642,6 @@ type action struct {
 	deps         []*action
 	objectFacts  map[objectFactKey]analysis.Fact
 	packageFacts map[packageFactKey]analysis.Fact
-	inputs       map[*analysis.Analyzer]interface{}
 	result       interface{}
 	diagnostics  []analysis.Diagnostic
 	err          error
@@ -490,19 +739,24 @@ func (act *action) execOnce() {
 
 	// Run the analysis.
 	pass := &analysis.Pass{
-		Analyzer:          act.a,
-		Fset:              act.pkg.Fset,
-		Files:             act.pkg.Syntax,
-		OtherFiles:        act.pkg.OtherFiles,
-		Pkg:               act.pkg.Types,
-		TypesInfo:         act.pkg.TypesInfo,
-		TypesSizes:        act.pkg.TypesSizes,
+		Analyzer:     act.a,
+		Fset:         act.pkg.Fset,
+		Files:        act.pkg.Syntax,
+		OtherFiles:   act.pkg.OtherFiles,
+		IgnoredFiles: act.pkg.IgnoredFiles,
+		Pkg:          act.pkg.Types,
+		TypesInfo:    act.pkg.TypesInfo,
+		TypesSizes:   act.pkg.TypesSizes,
+		TypeErrors:   act.pkg.TypeErrors,
+
 		ResultOf:          inputs,
 		Report:            func(d analysis.Diagnostic) { act.diagnostics = append(act.diagnostics, d) },
 		ImportObjectFact:  act.importObjectFact,
 		ExportObjectFact:  act.exportObjectFact,
 		ImportPackageFact: act.importPackageFact,
 		ExportPackageFact: act.exportPackageFact,
+		AllObjectFacts:    act.allObjectFacts,
+		AllPackageFacts:   act.allPackageFacts,
 	}
 	act.pass = pass
 
@@ -516,6 +770,15 @@ func (act *action) execOnce() {
 				err = fmt.Errorf(
 					"internal error: on package %s, analyzer %s returned a result of type %v, but declared ResultType %v",
 					pass.Pkg.Path(), pass.Analyzer, got, want)
+			}
+		}
+	}
+	if err == nil { // resolve diagnostic URLs
+		for i := range act.diagnostics {
+			if url, uerr := analysisflags.ResolveURL(act.a, act.diagnostics[i]); uerr == nil {
+				act.diagnostics[i].URL = url
+			} else {
+				err = uerr // keep the last error
 			}
 		}
 	}
@@ -545,11 +808,11 @@ func inheritFacts(act, dep *action) {
 		// Optionally serialize/deserialize fact
 		// to verify that it works across address spaces.
 		if serialize {
-			var err error
-			fact, err = codeFact(fact)
+			encodedFact, err := codeFact(fact)
 			if err != nil {
-				log.Panicf("internal error: encoding of %T fact failed in %v", fact, act)
+				log.Panicf("internal error: encoding of %T fact failed in %v: %v", fact, act, err)
 			}
+			fact = encodedFact
 		}
 
 		if false {
@@ -567,11 +830,11 @@ func inheritFacts(act, dep *action) {
 		// to verify that it works across address spaces
 		// and is deterministic.
 		if serialize {
-			var err error
-			fact, err = codeFact(fact)
+			encodedFact, err := codeFact(fact)
 			if err != nil {
 				log.Panicf("internal error: encoding of %T fact failed in %v", fact, act)
 			}
+			fact = encodedFact
 		}
 
 		if false {
@@ -611,7 +874,7 @@ func codeFact(fact analysis.Fact) (analysis.Fact, error) {
 
 // exportedFrom reports whether obj may be visible to a package that imports pkg.
 // This includes not just the exported members of pkg, but also unexported
-// constants, types, fields, and methods, perhaps belonging to oether packages,
+// constants, types, fields, and methods, perhaps belonging to other packages,
 // that find there way into the API.
 // This is an overapproximation of the more accurate approach used by
 // gc export data, which walks the type graph, but it's much simpler.
@@ -623,8 +886,13 @@ func exportedFrom(obj types.Object, pkg *types.Package) bool {
 		return obj.Exported() && obj.Pkg() == pkg ||
 			obj.Type().(*types.Signature).Recv() != nil
 	case *types.Var:
-		return obj.Exported() && obj.Pkg() == pkg ||
-			obj.IsField()
+		if obj.IsField() {
+			return true
+		}
+		// we can't filter more aggressively than this because we need
+		// to consider function parameters exported, but have no way
+		// of telling apart function parameters from local variables.
+		return obj.Pkg() == pkg
 	case *types.TypeName, *types.Const:
 		return true
 	}
@@ -666,6 +934,15 @@ func (act *action) exportObjectFact(obj types.Object, fact analysis.Fact) {
 	}
 }
 
+// allObjectFacts implements Pass.AllObjectFacts.
+func (act *action) allObjectFacts() []analysis.ObjectFact {
+	facts := make([]analysis.ObjectFact, 0, len(act.objectFacts))
+	for k := range act.objectFacts {
+		facts = append(facts, analysis.ObjectFact{Object: k.obj, Fact: act.objectFacts[k]})
+	}
+	return facts
+}
+
 // importPackageFact implements Pass.ImportPackageFact.
 // Given a non-nil pointer ptr of type *T, where *T satisfies Fact,
 // fact copies the fact value to *ptr.
@@ -698,9 +975,18 @@ func (act *action) exportPackageFact(fact analysis.Fact) {
 func factType(fact analysis.Fact) reflect.Type {
 	t := reflect.TypeOf(fact)
 	if t.Kind() != reflect.Ptr {
-		log.Fatalf("invalid Fact type: got %T, want pointer", t)
+		log.Fatalf("invalid Fact type: got %T, want pointer", fact)
 	}
 	return t
+}
+
+// allPackageFacts implements Pass.AllPackageFacts.
+func (act *action) allPackageFacts() []analysis.PackageFact {
+	facts := make([]analysis.PackageFact, 0, len(act.packageFacts))
+	for k := range act.packageFacts {
+		facts = append(facts, analysis.PackageFact{Package: k.pkg, Fact: act.packageFacts[k]})
+	}
+	return facts
 }
 
 func dbg(b byte) bool { return strings.IndexByte(Debug, b) >= 0 }
