@@ -11,16 +11,15 @@
 // all that is needed to define a standalone tool is a file,
 // example.org/findbadness/cmd/findbadness/main.go, containing:
 //
-//      // The findbadness command runs an analysis.
-// 	package main
+//	// The findbadness command runs an analysis.
+//	package main
 //
-// 	import (
-// 		"example.org/findbadness"
-// 		"golang.org/x/tools/go/analysis/singlechecker"
-// 	)
+//	import (
+//		"example.org/findbadness"
+//		"golang.org/x/tools/go/analysis/singlechecker"
+//	)
 //
-// 	func main() { singlechecker.Main(findbadness.Analyzer) }
-//
+//	func main() { singlechecker.Main(findbadness.Analyzer) }
 package singlechecker
 
 import (
@@ -56,7 +55,7 @@ func Main(a *analysis.Analyzer) {
 		if len(paras) > 1 {
 			fmt.Fprintln(os.Stderr, strings.Join(paras[1:], "\n\n"))
 		}
-		fmt.Fprintf(os.Stderr, "\nFlags:")
+		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flag.PrintDefaults()
 	}
 
