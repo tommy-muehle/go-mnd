@@ -20,8 +20,10 @@ func DefaultConfig() *Config {
 		IgnoredNumbers: map[string]struct{}{
 			"0":   {},
 			"0.0": {},
+			"0.":  {},
 			"1":   {},
 			"1.0": {},
+			"1.":  {},
 		},
 		IgnoredFiles: []*regexp.Regexp{
 			regexp.MustCompile(`_test.go`),

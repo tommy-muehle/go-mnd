@@ -25,10 +25,16 @@ func TestWithCustomChecks(t *testing.T) {
 	assert.False(c.IsCheckEnabled("condition"))
 }
 
-func TestZeroIsIgnoredNumber(t *testing.T) {
+func TestIgnoredNumbers(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.True(config.DefaultConfig().IsIgnoredNumber("0"))
+	// Sync with DefaultConfig()
+	// Ignored numbers are: 0, 1, and their two floating expressions
+	ignoredNumbers := []string{ "0", "0.0", "0.", "1", "1.0", "1." }
+
+	for _, n := range ignoredNumbers {
+		assert.True(config.DefaultConfig().IsIgnoredNumber(n))
+	}
 }
 
 func TestCanIgnoreCustomNumbers(t *testing.T) {
